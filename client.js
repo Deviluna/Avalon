@@ -7,8 +7,7 @@
 	dc = d.compatMode == 'CSS1Compat',
 	dx = dc ? dd: db,
 	ec = encodeURIComponent;
-	var badmen=['莫甘娜','刺客','莫德雷德','莫德雷德的爪牙'];//这是互相认识的坏人
-	var meilinknows=['莫甘娜','刺客','奥伯伦','莫德雷德的爪牙'];//梅林所见的坏人
+
 	
 	
 	w.CHAT = {
@@ -53,6 +52,24 @@
 		updateSysMsg:function(o, action){
 			console.log(o);
 
+			if(o.onlineUsers){
+				var b=false;
+				for(var key in o.onlineUsers){
+					console.log("compare"+key+","+this.userid);
+
+					if(key==this.userid)
+						b=true;
+				}
+				
+				if(!b){
+					document.close();
+					document.write("已经断开连接了");
+					
+				}
+					
+					}
+			
+			
 			//添加系统消息
 			var readyUsers=o.readyUsers;
 			var readyCount=o.readyCount;
@@ -111,7 +128,20 @@
 
 			}
 
+			else if(action=="loginfailed"){
+				console.log(o);
+				if(this.userid==o.user.userid){
+				alert("正在游戏，没法加入");
+				d.getElementById("gamebox").style.display="none";
+				d.getElementById("start").style.display="none";
+
+				window.close();
+				}
+				
+			}
+			
 			else if(action=="start"){
+				d.getElementById("restart").value="重新开始";
 				d.getElementById("gamebox").style.display = 'none';
 				d.getElementById("start").style.display = 'block';
 				console.log(o.onlineUsers);
@@ -119,7 +149,7 @@
 				console.log(this.userid);
 				var i=0;
 				for(var key in o.onlineUsers){
-					this.allchar[o.onlineUsers[key]]=o.character[i];
+					this.allchar[key]=o.character[i];
 					if(key==this.userid){
 						
 						this.userchar=o.character[i];
@@ -130,45 +160,57 @@
 					i++;
 				}
 				console.log(this.allchar);
-										var info=""
+				var info=""
 
 				if(this.userchar=="梅林"){
+					var mlist=[];
 					for(var key in this.allchar){
 						if(this.allchar[key]=="莫干娜"||this.allchar[key]=="刺客"||this.allchar[key]=="奥伯伦"||this.allchar[key]=="莫德雷德的爪牙"){
-							info+=key+"<br>";
+							mlist.push(o.onlineUsers[key]);
 						}
 					}
-											info+="都是坏人";
+					console.log(mlist);
+					info+=mlist.join("，");
+					info+="都是坏人";
 				}
 				
 				if(this.userchar=="派西维尔"){
+					var mlist=[];
 					for(var key in this.allchar){
 						if(this.allchar[key]=="莫干娜"||this.allchar[key]=="梅林"){
-							info+=key+"<br>";
+							mlist.push(o.onlineUsers[key]);
 						}
 					}
-											info+="可能是梅林";
+					info+=mlist.join("和");
+					info+="可能是梅林";
 				}				
 				
 				
 				
 				
 				if(this.userchar=="莫干娜"){
+					var mlist=[];
 					for(var key in this.allchar){
-						if(this.allchar[key]=="刺客"){
-							info+=key+"<br>";
+						if(this.allchar[key]=="莫干娜"||this.allchar[key]=="刺客"||this.allchar[key]=="莫德雷德的爪牙"||this.allchar[key]=="莫德雷德"){
+
+							if(key.toString()!=this.userid.toString())
+							mlist.push(o.onlineUsers[key]);
 						}
 					}
-					info+="是刺客";
+					info+=mlist.join(",");
+					info+="是你的同伙";
 				}							
 				
 				if(this.userchar=="刺客"){
+					var mlist=[];
 					for(var key in this.allchar){
-						if(this.allchar[key]=="莫干娜"){
-							info+=key+"<br>";
+						if(this.allchar[key]=="刺客"||this.allchar[key]=="莫干娜"||this.allchar[key]=="莫德雷德的爪牙"||this.allchar[key]=="莫德雷德"){
+						if(key.toString()!=this.userid.toString())
+							mlist.push(o.onlineUsers[key]);					
 						}
 					}
-						info+="是莫干娜";
+					info+=mlist.join(",");
+					info+="是你的同伙";
 				}
 
 
@@ -183,7 +225,15 @@
 					info+="Tips：梅林知道你，但是坏人不知道你。";
 				}
 				if(this.userchar=="莫德雷德的爪牙"){
-					info+=""
+					var mlist=[];
+					for(var key in this.allchar){
+						if(this.allchar[key]=="莫干娜"||this.allchar[key]=="刺客"||this.allchar[key]=="莫德雷德的爪牙"||this.allchar[key]=="莫德雷德"){
+							mlist.push(o.onlineUsers[key]);
+							//info+=key+"<br>";
+						}
+					}
+					info+=mlist.join(",");
+					info+="你们是一伙的";
 					
 				}
 				
@@ -192,7 +242,7 @@
 				
 			}
 			else{
-							var html = '';
+			var html = '';
 			html += '<div class="msg-system">';
 			html += user.username;
 			html += (action == 'login') ? ' 加入了游戏' : ' 退出了游戏';
@@ -281,7 +331,13 @@
 				CHAT.updateSysMsg(o, 'start');	
 			});
 
+			this.socket.on('loginfailed', function(o){
+				CHAT.updateSysMsg(o, 'loginfailed');	
+			});
 			
+			this.socket.on('restart', function(o){
+				CHAT.updateSysMsg(o, 'restart');	
+			});			
 			
 			//监听用户退出
 			this.socket.on('logout', function(o){

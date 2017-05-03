@@ -17,6 +17,26 @@ var restartCount=0;
 var readyCount=0;
 var currentUser;
 
+var inGame=0;
+function reload(obj){
+	console.log("reload"+obj.passwd);
+	if(obj.passwd=="090238"){
+		
+ onlineUsers = {};
+ restartUsers={};
+ readyUsers = {};
+
+ onlineCount=0;
+ restartCount=0;
+ readyCount=0;
+ currentUser="reload";
+ inGame=0;	
+		
+		
+		
+console.log("reload");		
+	}
+}
 function refreshData(){
 	
 	return {onlineUsers:onlineUsers,onlineCount:onlineCount,readyCount:readyCount,ReadyrestartCount:restartCount, user:currentUser}
@@ -27,6 +47,9 @@ io.on('connection', function(socket){
 	
 	//监听新用户加入
 	socket.on('login', function(obj){
+		if(inGame!=1){
+
+		
 		currentUser=obj;
 		//将新加入用户的唯一标识当作socket的名称，后面退出的时候会用到
 		socket.name = obj.userid;
@@ -43,13 +66,19 @@ io.on('connection', function(socket){
 		//向所有客户端广播用户加入
 		io.emit('login', {onlineUsers:onlineUsers,onlineCount:onlineCount,readyUsers:readyUsers,readyCount:readyCount,user:obj});
 		console.log(obj.username+'加入了游戏');
+		}
+		else{
+		console.log(obj);
+		io.emit('loginfailed', {user:obj});
+			
+		}
 	});
 	
 	//监听玩家准备 
 	socket.on('ready', function(obj){
 		currentUser=obj;
 		console.log("one man ready");
-		if(!readyUsers.hasOwnProperty(obj.userid)){
+		if(!readyUsers.hasOwnProperty(obj.userid)&&onlineUsers.hasOwnProperty(obj.userid)){
 			readyUsers[obj.userid] = obj.username;
 			console.log(readyUsers);
 			readyCount++;
@@ -85,41 +114,60 @@ io.on('connection', function(socket){
 				currentUser=obj;
 
 		console.log("one man restart");
-		if(!restartUsers.hasOwnProperty(obj.userid)){
+		if(!restartUsers.hasOwnProperty(obj.userid)&&onlineUsers.hasOwnProperty(obj.userid)){
 			restartUsers[obj.userid] = obj.username;
 			console.log(restartUsers);
 			restartCount++;
-		if(restartCount>=onlineCount/2)
+		if(restartCount>=onlineCount/2&&onlineCount>=5){
+			restart();
+			gameStart();
 			console.log("restart!!!");
+
+		}
 		}	
 	});		
 		
-	//监听玩家取消准备 
+	//监听玩家取消重开
 	socket.on('unrestart', function(obj){
 				currentUser=obj;
 
 		console.log("one man unrestart");
 		if(restartUsers.hasOwnProperty(obj.userid)){
 			
-			readyCount--;
+			restartCount--;
 			delete restartUsers[obj.userid];
-			console.log(restartUsers);
 		}
 		
 	});	
+
+	socket.on('reload', function(obj){
+		reload(obj);
+		
+		
+	});
+
 	
-	
+	function restart(){
+		restartUsers={};
+		console.log("restart user:"+restartUsers);
+		restartCount=0;
+		
+		
+	}
 	
 	function gameStart(){
-		
+		console.log(randomChar);
+		console.log(onlineUsers);
+		console.log(onlineCount);
+		inGame=1;
 		var randomChar=[];
 			for(var i=0;i<onlineCount;i++){
 				randomChar.push(character[i]);
 			}
-			if(onlineCount==8)
+			if(onlineCount==8){
 				randomChar.pop();
 				randomChar.push("莫德雷德的爪牙");
-			
+			}
 			//之后洗身份
 			for(var i=0;i<100;i++){
 				for(var j=0;j<readyCount;j++){
@@ -148,7 +196,14 @@ io.on('connection', function(socket){
 			//删除
 			delete onlineUsers[socket.name];
 			onlineCount--;
+			
+			if(onlineCount<5){
+				inGame=0;
+			}
+			
+			
 			console.log(obj.username+'退出了游戏');
+			console.log(onlineCount+" "+onlineUsers);
 		}
 		
 		if(readyUsers.hasOwnProperty(socket.name)){
