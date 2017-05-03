@@ -11,39 +11,34 @@ var character=['梅林','派西维尔','亚瑟的忠臣','莫干娜','刺客','�
 var onlineUsers = {};
 var restartUsers={};
 var readyUsers = {};
-
+var justLogin = {};
 var onlineCount=0;
 var restartCount=0;
 var readyCount=0;
 var currentUser;
-
+var clearUnready=0;
 var inGame=0;
 function reload(obj){
-	console.log("reload"+obj.passwd);
 	if(obj.passwd=="090238"){
 		
  onlineUsers = {};
  restartUsers={};
  readyUsers = {};
-
+ justLogin = {};
  onlineCount=0;
  restartCount=0;
  readyCount=0;
  currentUser="reload";
  inGame=0;	
-		
-		
-		
-console.log("reload");		
+	clearUnready=0;	
 	}
 }
 function refreshData(){
 	
-	return {onlineUsers:onlineUsers,onlineCount:onlineCount,readyCount:readyCount,ReadyrestartCount:restartCount, user:currentUser}
+	return {onlineUsers:onlineUsers,onlineCount:onlineCount,readyUsers:readyUsers,readyCount:readyCount,ReadyrestartCount:restartCount, user:currentUser}
 }
 
 io.on('connection', function(socket){
-	console.log('a user connected');
 	
 	//监听新用户加入
 	socket.on('login', function(obj){
@@ -60,15 +55,17 @@ io.on('connection', function(socket){
 			onlineUsers[obj.userid] = obj.username;
 			//在线人数+1
 			onlineCount++;
-
+		}
+		
+		
+		if(!justLogin.hasOwnProperty(obj.userid)){
+			justLogin[obj.userid]=obj.username;
 		}
 		
 		//向所有客户端广播用户加入
 		io.emit('login', {onlineUsers:onlineUsers,onlineCount:onlineCount,readyUsers:readyUsers,readyCount:readyCount,user:obj});
-		console.log(obj.username+'加入了游戏');
 		}
 		else{
-		console.log(obj);
 		io.emit('loginfailed', {user:obj});
 			
 		}
@@ -77,10 +74,8 @@ io.on('connection', function(socket){
 	//监听玩家准备 
 	socket.on('ready', function(obj){
 		currentUser=obj;
-		console.log("one man ready");
 		if(!readyUsers.hasOwnProperty(obj.userid)&&onlineUsers.hasOwnProperty(obj.userid)){
 			readyUsers[obj.userid] = obj.username;
-			console.log(readyUsers);
 			readyCount++;
 		io.emit('ready', {onlineUsers:onlineUsers,onlineCount:onlineCount,readyUsers:readyUsers,readyCount:readyCount,user:obj});
 		if(readyCount==onlineCount&&onlineCount>=5)
@@ -95,14 +90,9 @@ io.on('connection', function(socket){
 	socket.on('unready', function(obj){
 				currentUser=obj;
 
-		console.log("one man unready");
 		if(readyUsers.hasOwnProperty(obj.userid)){
-			
-					console.log("he is in");
 			readyCount--;
 			delete readyUsers[obj.userid];
-			console.log(readyUsers);
-			console.log(readyCount);
 		io.emit('unready', {onlineUsers:onlineUsers,onlineCount:onlineCount,readyUsers:readyUsers,readyCount:readyCount,user:obj});
 		}
 		
@@ -113,15 +103,12 @@ io.on('connection', function(socket){
 	socket.on('restart', function(obj){
 				currentUser=obj;
 
-		console.log("one man restart");
 		if(!restartUsers.hasOwnProperty(obj.userid)&&onlineUsers.hasOwnProperty(obj.userid)){
 			restartUsers[obj.userid] = obj.username;
-			console.log(restartUsers);
 			restartCount++;
 		if(restartCount>=onlineCount/2&&onlineCount>=5){
 			restart();
 			gameStart();
-			console.log("restart!!!");
 
 		}
 		}	
@@ -131,7 +118,6 @@ io.on('connection', function(socket){
 	socket.on('unrestart', function(obj){
 				currentUser=obj;
 
-		console.log("one man unrestart");
 		if(restartUsers.hasOwnProperty(obj.userid)){
 			
 			restartCount--;
@@ -142,23 +128,32 @@ io.on('connection', function(socket){
 
 	socket.on('reload', function(obj){
 		reload(obj);
-		
-		
 	});
 
+	socket.on('kick', function(obj){
+
+		if(clearUnready==0){
+		io.emit('kick', refreshData());
+		justLogin={};
+		clearUnready=1;
+		setTimeout(function(){	kickUnready();},15000);
+		}
+	});	
+		//监听用户退出
+	socket.on('disconnect', function(){
+		removeUser(socket.name);
+	});
 	
+});	
 	function restart(){
 		restartUsers={};
-		console.log("restart user:"+restartUsers);
 		restartCount=0;
 		
 		
-	}
+	};
 	
 	function gameStart(){
-		console.log(randomChar);
-		console.log(onlineUsers);
-		console.log(onlineCount);
+
 		inGame=1;
 		var randomChar=[];
 			for(var i=0;i<onlineCount;i++){
@@ -178,49 +173,62 @@ io.on('connection', function(socket){
 				}
 			}
 			
-		console.log(randomChar);
-		console.log("game start");
 		io.emit('start', {onlineUsers:onlineUsers,character:randomChar});
 
 	
 	};
 
-	//监听用户退出
-	socket.on('disconnect', function(){
-		//将退出的用户从在线列表中删除
-		if(onlineUsers.hasOwnProperty(socket.name)) {
-			//退出用户的信息
-			var obj = {userid:socket.name, username:onlineUsers[socket.name]};
-			currentUser=obj;
 
+
+function removeUser(userid){
+	
+
+		
+		if(readyUsers.hasOwnProperty(userid)){
+			delete readyUsers[userid];
+			readyCount--;
+		}
+		if(restartUsers.hasOwnProperty(userid)){
+			delete restartUsers[userid];	
+			restartCount--;
+		}
+		if(onlineUsers.hasOwnProperty(userid)) {
+			//退出用户的信息
+			var obj = {userid:userid, username:onlineUsers[userid]};
+			currentUser=obj;
 			//删除
-			delete onlineUsers[socket.name];
+			delete onlineUsers[userid];
 			onlineCount--;
 			
 			if(onlineCount<5){
 				inGame=0;
 			}
 			
-			
-			console.log(obj.username+'退出了游戏');
-			console.log(onlineCount+" "+onlineUsers);
+		io.emit('logout',refreshData());
+
+		}
+};
+
+function kickUnready(){
+	clearUnready=0;
+	for(var key in onlineUsers){
+		var isReady=false;
+		for(var key2 in readyUsers){
+			if(key==key2)
+			{
+				isReady=true;
+			}
+		}
+		for(var key3 in justLogin){
+			if(key==key3)
+				isReady=true;
 		}
 		
-		if(readyUsers.hasOwnProperty(socket.name)){
-			delete readyUsers[socket.name];
-			readyCount--;
-			
-		}
-		if(restartUsers.hasOwnProperty(socket.name)){
-			delete restartUsers[socket.name];	
-			restartCount--;
-		}
-			io.emit('logout',refreshData());
-
-	});
-});
-
-
+		if(!isReady){
+			removeUser(key);
+		}	
+	}	
+};
 	
 
 http.listen(3000, function(){

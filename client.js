@@ -50,12 +50,10 @@
 		
 		
 		updateSysMsg:function(o, action){
-			console.log(o);
 
 			if(o.onlineUsers){
 				var b=false;
 				for(var key in o.onlineUsers){
-					console.log("compare"+key+","+this.userid);
 
 					if(key==this.userid)
 						b=true;
@@ -63,7 +61,7 @@
 				
 				if(!b){
 					document.close();
-					document.write("已经断开连接了");
+					document.write("网络问题或过长时间未准备，已经断开连接了");
 					
 				}
 					
@@ -94,7 +92,7 @@
 					separator='、';
 				}			
 			}	
-			
+			console.log(readyUsers);
 			d.getElementById("onlinecount").innerHTML = '当前共有 '+onlineCount+' 人在线，在线列表：'+userhtml;
 			d.getElementById("readycount").innerHTML='当前共有'+readyCount+'人准备，准备列表: '+readyhtml;
 			
@@ -114,7 +112,6 @@
 				
 			}
 			else if(action=="unready"){
-			console.log("acc unready");
 			var html = '';
 			html += '<div class="msg-system">';
 			html += user.username;
@@ -129,7 +126,6 @@
 			}
 
 			else if(action=="loginfailed"){
-				console.log(o);
 				if(this.userid==o.user.userid){
 				alert("正在游戏，没法加入");
 				d.getElementById("gamebox").style.display="none";
@@ -140,13 +136,49 @@
 				
 			}
 			
+			
+			else if(action=="kick"){
+				var unreadyUser=[];
+				
+						var html = '';
+						html += '<div class="msg-system">';
+						html += user.username+"开启了清理模式</br>";
+						html += "（在本次清理完成前，不响应其他清理请求）"
+						html += '</div>';
+						var section = d.createElement('section');
+						section.className = 'system J-mjrlinkWrap J-cutMsg';
+						section.innerHTML = html;
+						this.msgObj.appendChild(section);	
+						this.scrollToBottom();
+				
+				
+				
+				for(var key in onlineUsers){
+					var isReady=false;
+					for(var key2 in readyUsers){
+						if(key==key2)
+							isReady=true;
+					}
+					if(!isReady){
+						var html = '';
+						html += '<div class="msg-system">';
+						html += onlineUsers[key];
+						html += "请在15秒内准备"
+						html += '</div>';
+						var section = d.createElement('section');
+						section.className = 'system J-mjrlinkWrap J-cutMsg';
+						section.innerHTML = html;
+						this.msgObj.appendChild(section);	
+						this.scrollToBottom();
+					}
+				}
+			}
+			
+			
 			else if(action=="start"){
 				d.getElementById("restart").value="重新开始";
 				d.getElementById("gamebox").style.display = 'none';
 				d.getElementById("start").style.display = 'block';
-				console.log(o.onlineUsers);
-				console.log(o.character);
-				console.log(this.userid);
 				var i=0;
 				for(var key in o.onlineUsers){
 					this.allchar[key]=o.character[i];
@@ -159,7 +191,6 @@
 					}
 					i++;
 				}
-				console.log(this.allchar);
 				var info=""
 
 				if(this.userchar=="梅林"){
@@ -169,7 +200,6 @@
 							mlist.push(o.onlineUsers[key]);
 						}
 					}
-					console.log(mlist);
 					info+=mlist.join("，");
 					info+="都是坏人";
 				}
@@ -283,14 +313,15 @@
 				restartButton.value="重新开始";
 		}			
 		},
-		
+		kick:function(){
+			this.socket.emit("kick",{userid:this.userid,username:this.username});
+		},
 		
 		
 		//第一个界面用户提交用户名
 		usernameSubmit:function(){
 			var username = d.getElementById("username").value;
 			if(username != ""){
-				console.log("start game");
 				d.getElementById("username").value = '';
 				d.getElementById("loginbox").style.display = 'none';
 				d.getElementById("gamebox").style.display = 'block';
@@ -342,6 +373,10 @@
 			//监听用户退出
 			this.socket.on('logout', function(o){
 				CHAT.updateSysMsg(o, 'logout');
+			});
+			
+			this.socket.on('kick', function(o){
+				CHAT.updateSysMsg(o, 'kick');
 			});
 			
 			//监听消息发送
