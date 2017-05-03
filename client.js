@@ -7,6 +7,8 @@
 	dc = d.compatMode == 'CSS1Compat',
 	dx = dc ? dd: db,
 	ec = encodeURIComponent;
+	var badmen=['莫甘娜','刺客','莫德雷德','莫德雷德的爪牙'];//这是互相认识的坏人
+	var meilinknows=['莫甘娜','刺客','奥伯伦','莫德雷德的爪牙'];//梅林所见的坏人
 	
 	
 	w.CHAT = {
@@ -49,14 +51,42 @@
 		
 		
 		updateSysMsg:function(o, action){
-			
-			
+			console.log(o);
+
 			//添加系统消息
-			if(action=="ready"){
 			var readyUsers=o.readyUsers;
+			var readyCount=o.readyCount;
+			var onlineUsers=o.onlineUsers;
+			var onlineCount=o.onlineCount;
+			var user = o.user;
+			//更新在线人数
+			var userhtml = '';
+			var separator = '';
+			for(key in onlineUsers) {
+		        if(onlineUsers.hasOwnProperty(key)){
+					userhtml += separator+onlineUsers[key];
+					separator = '、';
+				}
+		    }
+			//更新准备人数
+			var readyhtml='';
+			separator='';
+			for(key in readyUsers){
+				if(readyUsers.hasOwnProperty(key)){
+					readyhtml+=separator+readyUsers[key];
+					separator='、';
+				}			
+			}	
+			
+			d.getElementById("onlinecount").innerHTML = '当前共有 '+onlineCount+' 人在线，在线列表：'+userhtml;
+			d.getElementById("readycount").innerHTML='当前共有'+readyCount+'人准备，准备列表: '+readyhtml;
+			
+			
+						
+			if(action=="ready"){
 				var html = '';
 			html += '<div class="msg-system">';
-			html += o.username;
+			html += user.username;
 			html += '已准备';
 			html += '</div>';
 			var section = d.createElement('section');
@@ -70,7 +100,7 @@
 			console.log("acc unready");
 			var html = '';
 			html += '<div class="msg-system">';
-			html += o.username;
+			html += user.username;
 			html += '取消准备';
 			html += '</div>';
 			var section = d.createElement('section');
@@ -80,9 +110,7 @@
 			this.scrollToBottom();
 
 			}
-			else if(action=="message"){
-				console.log(o);
-			}
+
 			else if(action=="start"){
 				d.getElementById("gamebox").style.display = 'none';
 				d.getElementById("start").style.display = 'block';
@@ -106,7 +134,7 @@
 
 				if(this.userchar=="梅林"){
 					for(var key in this.allchar){
-						if(this.allchar[key]=="莫干娜"||this.allchar[key]=="刺客"||this.allchar[key]=="奥伯伦"){
+						if(this.allchar[key]=="莫干娜"||this.allchar[key]=="刺客"||this.allchar[key]=="奥伯伦"||this.allchar[key]=="莫德雷德的爪牙"){
 							info+=key+"<br>";
 						}
 					}
@@ -123,13 +151,15 @@
 				}				
 				
 				
+				
+				
 				if(this.userchar=="莫干娜"){
 					for(var key in this.allchar){
 						if(this.allchar[key]=="刺客"){
 							info+=key+"<br>";
 						}
 					}
-											info+="是刺客";
+					info+="是刺客";
 				}							
 				
 				if(this.userchar=="刺客"){
@@ -138,7 +168,7 @@
 							info+=key+"<br>";
 						}
 					}
-											info+="是莫干娜";
+						info+="是莫干娜";
 				}
 
 
@@ -146,32 +176,23 @@
 
 					info+="你是萌萌哒的忠臣，所以你什么都不知道";
 				}
+				
+
+				if(this.userchar=="奥伯伦"){
+
+					info+="Tips：梅林知道你，但是坏人不知道你。";
+				}
+				if(this.userchar=="莫德雷德的爪牙"){
+					info+=""
+					
+				}
+				
 				d.getElementById("uname").innerHTML=this.username;
 				d.getElementById("info").innerHTML=info;
 				
 			}
 			else{
-				
-				
-			//当前在线用户列表
-			var onlineUsers = o.onlineUsers;
-			//当前在线人数
-			var user = o.user;
-			var onlineCount=o.onlineCount;
-			//更新在线人数
-			var userhtml = '';
-			var separator = '';
-			for(key in onlineUsers) {
-		        if(onlineUsers.hasOwnProperty(key)){
-					userhtml += separator+onlineUsers[key];
-					separator = '、';
-				}
-		    }
-			d.getElementById("onlinecount").innerHTML = '当前共有 '+onlineCount+' 人在线，在线列表：'+userhtml;
-				
-				
-			
-			var html = '';
+							var html = '';
 			html += '<div class="msg-system">';
 			html += user.username;
 			html += (action == 'login') ? ' 加入了游戏' : ' 退出了游戏';
@@ -181,6 +202,7 @@
 			section.innerHTML = html;
 			this.msgObj.appendChild(section);	
 			this.scrollToBottom();
+		
 			}
 		},
 		

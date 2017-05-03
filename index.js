@@ -8,9 +8,6 @@ app.get('/', function(req, res){
 
 var character=['梅林','派西维尔','亚瑟的忠臣','莫干娜','刺客','亚瑟的忠臣','奥伯伦','亚瑟的忠臣'];
 
-
-
-
 var onlineUsers = {};
 var restartUsers={};
 var readyUsers = {};
@@ -18,12 +15,19 @@ var readyUsers = {};
 var onlineCount=0;
 var restartCount=0;
 var readyCount=0;
+var currentUser;
+
+function refreshData(){
+	
+	return {onlineUsers:onlineUsers,onlineCount:onlineCount,readyCount:readyCount,ReadyrestartCount:restartCount, user:currentUser}
+}
 
 io.on('connection', function(socket){
 	console.log('a user connected');
 	
 	//监听新用户加入
 	socket.on('login', function(obj){
+		currentUser=obj;
 		//将新加入用户的唯一标识当作socket的名称，后面退出的时候会用到
 		socket.name = obj.userid;
 		
@@ -37,24 +41,22 @@ io.on('connection', function(socket){
 		}
 		
 		//向所有客户端广播用户加入
-		io.emit('login', {onlineUsers:onlineUsers,onlineCount:onlineCount,user:obj});
+		io.emit('login', {onlineUsers:onlineUsers,onlineCount:onlineCount,readyUsers:readyUsers,readyCount:readyCount,user:obj});
 		console.log(obj.username+'加入了游戏');
 	});
 	
 	//监听玩家准备 
 	socket.on('ready', function(obj){
+		currentUser=obj;
 		console.log("one man ready");
 		if(!readyUsers.hasOwnProperty(obj.userid)){
 			readyUsers[obj.userid] = obj.username;
 			console.log(readyUsers);
 			readyCount++;
-		io.emit('ready',{readyUsers:readyUsers,readyCount:readyCount,username:obj.username});
+		io.emit('ready', {onlineUsers:onlineUsers,onlineCount:onlineCount,readyUsers:readyUsers,readyCount:readyCount,user:obj});
 		if(readyCount==onlineCount&&onlineCount>=5)
 			gameStart();
-		
-		
-		
-		
+
 		}	
 	});
 
@@ -62,6 +64,8 @@ io.on('connection', function(socket){
 		
 	//监听玩家取消准备 
 	socket.on('unready', function(obj){
+				currentUser=obj;
+
 		console.log("one man unready");
 		if(readyUsers.hasOwnProperty(obj.userid)){
 			
@@ -70,7 +74,7 @@ io.on('connection', function(socket){
 			delete readyUsers[obj.userid];
 			console.log(readyUsers);
 			console.log(readyCount);
-		io.emit('unready',{readyUsers:readyUsers,readyCount:readyCount,username:obj.username});
+		io.emit('unready', {onlineUsers:onlineUsers,onlineCount:onlineCount,readyUsers:readyUsers,readyCount:readyCount,user:obj});
 		}
 		
 	});	
@@ -78,6 +82,8 @@ io.on('connection', function(socket){
 	
 	//监听玩家重开
 	socket.on('restart', function(obj){
+				currentUser=obj;
+
 		console.log("one man restart");
 		if(!restartUsers.hasOwnProperty(obj.userid)){
 			restartUsers[obj.userid] = obj.username;
@@ -90,6 +96,8 @@ io.on('connection', function(socket){
 		
 	//监听玩家取消准备 
 	socket.on('unrestart', function(obj){
+				currentUser=obj;
+
 		console.log("one man unrestart");
 		if(restartUsers.hasOwnProperty(obj.userid)){
 			
@@ -108,6 +116,9 @@ io.on('connection', function(socket){
 			for(var i=0;i<onlineCount;i++){
 				randomChar.push(character[i]);
 			}
+			if(onlineCount==8)
+				randomChar.pop();
+				randomChar.push("莫德雷德的爪牙");
 			
 			//之后洗身份
 			for(var i=0;i<100;i++){
@@ -124,7 +135,7 @@ io.on('connection', function(socket){
 		io.emit('start', {onlineUsers:onlineUsers,character:randomChar});
 
 	
-	}
+	};
 
 	//监听用户退出
 	socket.on('disconnect', function(){
@@ -132,33 +143,30 @@ io.on('connection', function(socket){
 		if(onlineUsers.hasOwnProperty(socket.name)) {
 			//退出用户的信息
 			var obj = {userid:socket.name, username:onlineUsers[socket.name]};
-			
+			currentUser=obj;
+
 			//删除
 			delete onlineUsers[socket.name];
-			io.emit('logout', {onlineUsers:onlineUsers, user:obj});
-			console.log(obj.username+'退出了聊天室');
+			onlineCount--;
+			console.log(obj.username+'退出了游戏');
 		}
 		
 		if(readyUsers.hasOwnProperty(socket.name)){
-			delete readyUsers[socket.name];	
+			delete readyUsers[socket.name];
+			readyCount--;
+			
 		}
 		if(restartUsers.hasOwnProperty(socket.name)){
 			delete restartUsers[socket.name];	
-		}	
+			restartCount--;
+		}
+			io.emit('logout',refreshData());
+
 	});
-	
-	
-	
-	
-	
-	//监听用户发布聊天内容
-	socket.on('message', function(obj){
-		//向所有客户端广播发布的消息
-		io.emit('message', obj);
-		console.log(obj.username+'说：'+obj.content);
-	});
-  
 });
+
+
+	
 
 http.listen(3000, function(){
 	console.log('listening on *:3000');
