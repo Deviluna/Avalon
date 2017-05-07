@@ -21,29 +21,21 @@
 				<input type="button" style="width:50px;" value="确定" onclick="CHAT.usernameSubmit();clickCookie()"/>
             </div>
         </div>
-        <div id="gamebox" style="display:none;text-align:center;margin-top:20px">
-			
-			<input id="ready" type="button" style="width:100px;bottom:20px;" value="准备" onclick="CHAT.ready()" />
-			<input id="kick" type="button" style="width:100px;bottom:20px;" value="清理" onclick="CHAT.kick()" />
-
-			
+        <div id="gamebox" style="display:none;">
+			<p>user is here</p>
 			<p id="onlinecount"></p>
 			<p id="readycount"></p>
 			<p id="message"></p>
 
+			<input id="ready" type="button" style="width:50px;" value="准备" onclick="CHAT.ready()"/>
+
         </div>
 		
-
-		<div id="start" style="display:none;text-align:center;margin-top:20px">
+		<div id="start" style="display:none;">
 			<p>游戏开始</p>
-			<br>
 			<p><span id="uname"></span>,你的身份是<span id="character"></span></p>
 			<p id="info"></p>
-			<p id="status"></p>
-			
-			
-			
-			<input type="button" style="width:100px;position:fixed;bottom:20px;" value="重新开始" id="restart" onclick="CHAT.restart()"/>
+			<input type="button" style="width:50px;" value="重新开始" id="restart" onclick="CHAT.restart()"/>
 
 		</div>
 		

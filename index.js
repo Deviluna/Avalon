@@ -136,7 +136,7 @@ io.on('connection', function(socket){
 		io.emit('kick', refreshData());
 		justLogin={};
 		clearUnready=1;
-		setTimeout(function(){	kickUnready();},15000);
+		setTimeout(function(){	kickUnready();},6000);
 		}
 	});	
 		//监听用户退出
@@ -161,7 +161,17 @@ io.on('connection', function(socket){
 			}
 			if(onlineCount==8){
 				randomChar.pop();
+				randomChar.pop();
 				randomChar.push("莫德雷德的爪牙");
+				randomChar.push("亚瑟的忠臣");
+			}
+			if(onlineCount==9){
+				randomChar=['梅林','派西维尔','亚瑟的忠臣','莫干娜','刺客','亚瑟的忠臣','莫德雷德','亚瑟的忠臣','亚瑟的忠臣'];
+			}
+			if(onlineCount==10){
+				randomChar=['梅林','派西维尔','亚瑟的忠臣','莫干娜','刺客','亚瑟的忠臣','莫德雷德','亚瑟的忠臣','亚瑟的忠臣','奥伯伦'];
+
+				
 			}
 			//之后洗身份
 			for(var i=0;i<100;i++){
