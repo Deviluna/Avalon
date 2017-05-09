@@ -37,3 +37,9 @@ console.log(username);
 if (username!=null && username!="")
 	document.getElementById("username").value = username;
 }
+
+
+$(document).ready(function(){
+	$("#loginbox").fadeIn("slow");
+
+});

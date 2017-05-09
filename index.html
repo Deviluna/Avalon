@@ -10,28 +10,37 @@
 
         <!--[if lt IE 8]><script src="./json3.min.js"></script><![endif]-->
         <script src="http://120.77.248.40:3000/socket.io/socket.io.js"></script>
+		<script src="jquery-3.2.1.js"></script>
+
     </head>
     <body onload="checkCookie()">
-        <div id="loginbox">
+	
+
+	
+	
+        <div id="loginbox" style="display:none;">
             <div style="width:260px;margin:200px auto;">
                 请先输入你在本次游戏的昵称
                 <br/>
                 <br/>
                 <input type="text" style="width:180px;" placeholder="请输入用户名" id="username" name="username" />
 				<input type="button" style="width:50px;" value="确定" onclick="CHAT.usernameSubmit();clickCookie()"/>
+
+				<h2 id="wupresent" style="display:none;float:right; text-align:right;">by Deviluna</h2>
             </div>
         </div>
-        <div id="gamebox" style="display:none;">
-			<p>user is here</p>
+        <div id="gamebox" style="display:none;" align="center">
+					<input id="ready" type="button" style="width:50px;" value="准备" onclick="CHAT.ready()"/>
+					<input id="clear" type="button" style="width:50px;" value="清理" onclick="CHAT.kick()"/>
+
 			<p id="onlinecount"></p>
 			<p id="readycount"></p>
 			<p id="message"></p>
 
-			<input id="ready" type="button" style="width:50px;" value="准备" onclick="CHAT.ready()"/>
 
         </div>
 		
-		<div id="start" style="display:none;">
+		<div id="start" style="display:none;" align="center">
 			<p>游戏开始</p>
 			<p><span id="uname"></span>,你的身份是<span id="character"></span></p>
 			<p id="info"></p>
